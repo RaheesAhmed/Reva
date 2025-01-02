@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import styles from "../shared/page.module.css";
-import Chat from "../../components/chat";
-import WeatherWidget from "../../components/weather-widget";
-import { getWeather } from "../../utils/weather";
+import styles from "@/app/shared/page.module.css";
+import Chat from "@/app/components/chat";
+import WeatherWidget from "@/app/components/weather-widget";
+import { getWeather } from "@/app/utils/weather";
 import { RequiredActionFunctionToolCall } from "openai/resources/beta/threads/runs/runs";
 
 interface WeatherData {
