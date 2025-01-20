@@ -20,6 +20,17 @@ import { Logo } from "@/components/ui/logo";
 import { generateSalesScript, handleObjection, generateComparables, researchLocation } from "@/utils/real-estate";
 import { performWebSearch } from "@/utils/search";
 
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { 
+  SalesScriptDialog, 
+  ObjectionHandlerDialog, 
+  ComparablesDialog, 
+  LocationResearchDialog 
+} from "@/components/dialogs/tool-dialogs";
+
 type MessageProps = {
   role: "user" | "assistant" | "code";
   content: string;
@@ -382,108 +393,184 @@ const autoResizeTextArea = (element: HTMLTextAreaElement) => {
   element.style.height = `${Math.min(element.scrollHeight, 200)}px`; // Max height of 200px
 };
 
-const ToolButton = ({ icon: Icon, label, onClick }: { icon: any, label: string, onClick: () => void }) => (
-  <Button
-    variant="ghost"
-    size="sm"
-    className="flex items-center gap-2 text-neutral-400 hover:text-white hover:bg-neutral-800"
-    onClick={onClick}
-  >
-    <Icon className="h-4 w-4" />
-    <span className="text-sm">{label}</span>
-  </Button>
-);
+const plugins = [
+  {
+    id: 'script-generation',
+    icon: FileText,
+    label: 'Script Generation',
+    description: 'Generate customized sales scripts',
+    color: 'text-blue-400',
+    options: [
+      {
+        id: 'cold-call',
+        label: 'Cold Call Script',
+        function: 'generate_sales_script',
+        args: { type: 'cold_call' }
+      },
+      {
+        id: 'industry-script',
+        label: 'Industry Specific',
+        function: 'generate_sales_script',
+        args: { type: 'industry_specific' }
+      },
+      {
+        id: 'template-script',
+        label: 'Template Management',
+        function: 'generate_sales_script',
+        args: { type: 'template' }
+      }
+    ]
+  },
+  {
+    id: 'objection-handling',
+    icon: Shield,
+    label: 'Objection Handling',
+    description: 'Handle common sales objections',
+    color: 'text-red-400',
+    options: [
+      {
+        id: 'objection-detect',
+        label: 'Real-time Detection',
+        function: 'handle_objection',
+        args: { type: 'realtime' }
+      },
+      {
+        id: 'response-db',
+        label: 'Response Database',
+        function: 'handle_objection',
+        args: { type: 'database' }
+      },
+      {
+        id: 'context-suggest',
+        label: 'Context Suggestions',
+        function: 'handle_objection',
+        args: { type: 'context' }
+      }
+    ]
+  },
+  {
+    id: 'value-proposition',
+    icon: Target,
+    label: 'Value Proposition',
+    description: 'Create compelling value propositions',
+    color: 'text-green-400',
+    options: [
+      {
+        id: 'federal-data',
+        label: 'Federal Data Analysis',
+        function: 'research_location',
+        args: { type: 'federal' }
+      },
+      {
+        id: 'market-analysis',
+        label: 'Market Analysis',
+        function: 'research_location',
+        args: { type: 'market' }
+      },
+      {
+        id: 'uvp-template',
+        label: 'UVP Templates',
+        function: 'research_location',
+        args: { type: 'template' }
+      }
+    ]
+  },
+  {
+    id: 'comparables',
+    icon: BarChart,
+    label: 'Comparables',
+    description: 'Analyze comparable properties',
+    color: 'text-purple-400',
+    options: [
+      {
+        id: 'property-compare',
+        label: 'Property Comparison',
+        function: 'generate_comparables',
+        args: { type: 'property' }
+      },
+      {
+        id: 'sales-data',
+        label: 'Recent Sales Data',
+        function: 'generate_comparables',
+        args: { type: 'sales' }
+      },
+      {
+        id: 'market-trends',
+        label: 'Market Trends',
+        function: 'generate_comparables',
+        args: { type: 'trends' }
+      }
+    ]
+  }
+];
 
 const ChatToolbar = ({ onToolSelect }: { onToolSelect: (tool: string) => void }) => {
   return (
-    <div className="flex items-center gap-2 px-4 py-2 border-b border-neutral-800">
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button variant="ghost" size="sm" className="text-neutral-400 hover:text-white">
-            <FileText className="h-4 w-4 mr-2" />
-            Script Generation
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-56 bg-neutral-900 border-neutral-800">
-          <div className="flex flex-col gap-1">
-            <Button variant="ghost" size="sm" onClick={() => onToolSelect('cold-call')} className="justify-start text-neutral-400 hover:text-white">
-              Cold Call Script
+    <div className="flex items-center gap-3 px-6 py-3 border-b border-neutral-800 bg-neutral-900/50 backdrop-blur-sm">
+      {plugins.map((plugin) => (
+        <Popover key={plugin.id}>
+          <PopoverTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className={cn(
+                "text-neutral-400 hover:text-white",
+                "transition-all duration-200",
+                "flex items-center gap-2.5",
+                "rounded-lg px-3 py-2",
+                "hover:bg-neutral-800/50",
+                "group relative"
+              )}
+            >
+              <div className={cn(
+                "p-1.5 rounded-lg",
+                "bg-neutral-800/50 group-hover:bg-neutral-700/50",
+                "transition-all duration-200 ease-in-out",
+                "ring-1 ring-neutral-700/50 group-hover:ring-neutral-600/50",
+                plugin.color
+              )}>
+                <plugin.icon className="h-4 w-4" />
+              </div>
+              <span className="font-medium">{plugin.label}</span>
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => onToolSelect('industry-script')} className="justify-start text-neutral-400 hover:text-white">
-              Industry Specific
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => onToolSelect('template-script')} className="justify-start text-neutral-400 hover:text-white">
-              Template Management
-            </Button>
-          </div>
-        </PopoverContent>
-      </Popover>
-
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button variant="ghost" size="sm" className="text-neutral-400 hover:text-white">
-            <Shield className="h-4 w-4 mr-2" />
-            Objection Handling
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-56 bg-neutral-900 border-neutral-800">
-          <div className="flex flex-col gap-1">
-            <Button variant="ghost" size="sm" onClick={() => onToolSelect('objection-detect')} className="justify-start text-neutral-400 hover:text-white">
-              Real-time Detection
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => onToolSelect('response-db')} className="justify-start text-neutral-400 hover:text-white">
-              Response Database
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => onToolSelect('context-suggest')} className="justify-start text-neutral-400 hover:text-white">
-              Context Suggestions
-            </Button>
-          </div>
-        </PopoverContent>
-      </Popover>
-
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button variant="ghost" size="sm" className="text-neutral-400 hover:text-white">
-            <Target className="h-4 w-4 mr-2" />
-            Value Proposition
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-56 bg-neutral-900 border-neutral-800">
-          <div className="flex flex-col gap-1">
-            <Button variant="ghost" size="sm" onClick={() => onToolSelect('federal-data')} className="justify-start text-neutral-400 hover:text-white">
-              Federal Data Analysis
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => onToolSelect('market-analysis')} className="justify-start text-neutral-400 hover:text-white">
-              Market Analysis
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => onToolSelect('uvp-template')} className="justify-start text-neutral-400 hover:text-white">
-              UVP Templates
-            </Button>
-          </div>
-        </PopoverContent>
-      </Popover>
-
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button variant="ghost" size="sm" className="text-neutral-400 hover:text-white">
-            <BarChart className="h-4 w-4 mr-2" />
-            Comparables
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-56 bg-neutral-900 border-neutral-800">
-          <div className="flex flex-col gap-1">
-            <Button variant="ghost" size="sm" onClick={() => onToolSelect('property-compare')} className="justify-start text-neutral-400 hover:text-white">
-              Property Comparison
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => onToolSelect('sales-data')} className="justify-start text-neutral-400 hover:text-white">
-              Recent Sales Data
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => onToolSelect('market-trends')} className="justify-start text-neutral-400 hover:text-white">
-              Market Trends
-            </Button>
-          </div>
-        </PopoverContent>
-      </Popover>
+          </PopoverTrigger>
+          <PopoverContent 
+            className={cn(
+              "w-72 p-0",
+              "bg-neutral-900 border border-neutral-800",
+              "shadow-2xl shadow-black/20",
+              "backdrop-blur-xl"
+            )}
+            sideOffset={8}
+          >
+            <div className="p-4 border-b border-neutral-800">
+              <h3 className="text-sm font-semibold text-white mb-1.5">{plugin.label}</h3>
+              <p className="text-xs text-neutral-400">{plugin.description}</p>
+            </div>
+            <div className="p-2">
+              <div className="flex flex-col">
+                {plugin.options.map((option) => (
+                  <Button
+                    key={option.id}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onToolSelect(option.id)}
+                    className={cn(
+                      "justify-start text-neutral-400",
+                      "hover:text-white hover:bg-neutral-800",
+                      "transition-all duration-150",
+                      "rounded-md px-3 py-2 h-auto",
+                      "font-medium"
+                    )}
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      ))}
     </div>
   );
 };
@@ -502,6 +589,7 @@ const ChatPage = () => {
   const scrollAreaRef = React.useRef<HTMLDivElement>(null);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+  const [activeDialog, setActiveDialog] = React.useState<string | null>(null);
 
   // Handle localStorage after component mounts
   React.useEffect(() => {
@@ -888,47 +976,28 @@ const ChatPage = () => {
     localStorage.setItem("chatSessions", JSON.stringify(updatedSessions));
   };
 
-  const handleToolSelect = (tool: string) => {
-    let prompt = "";
-    switch(tool) {
-      case 'cold-call':
-        prompt = "Generate a cold call script for a commercial real estate property.";
-        break;
-      case 'industry-script':
-        prompt = "Create an industry-specific sales script for the technology sector.";
-        break;
-      case 'template-script':
-        prompt = "Show available script templates and help me customize one.";
-        break;
-      case 'objection-detect':
-        prompt = "Help me prepare for common objections in commercial real estate sales.";
-        break;
-      case 'response-db':
-        prompt = "Access the response database for handling price objections.";
-        break;
-      case 'context-suggest':
-        prompt = "Provide context-aware suggestions for my next client meeting.";
-        break;
-      case 'federal-data':
-        prompt = "Analyze federal data to create a unique value proposition.";
-        break;
-      case 'market-analysis':
-        prompt = "Generate a market analysis report for downtown properties.";
-        break;
-      case 'uvp-template':
-        prompt = "Help me create a unique value proposition using available templates.";
-        break;
-      case 'property-compare':
-        prompt = "Compare similar properties in the area.";
-        break;
-      case 'sales-data':
-        prompt = "Show recent sales data for commercial properties.";
-        break;
-      case 'market-trends':
-        prompt = "Analyze market trends for the past 6 months.";
-        break;
-    }
+  const handleToolSelect = (toolId: string) => {
+    const plugin = plugins.find(p => p.options.find(o => o.id === toolId));
+    const option = plugin?.options.find(o => o.id === toolId);
+    
+    if (!option) return;
+
+    setActiveDialog(option.function);
+  };
+
+  const handleDialogSubmit = (data: any) => {
+    if (!activeDialog) return;
+
+    const functionCall = {
+      name: activeDialog,
+      arguments: JSON.stringify(data)
+    };
+
+    // Add the function call to the message
+    const prompt = `Using the ${activeDialog} tool with the following parameters:\n\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\``;
     setUserInput(prompt);
+    setActiveDialog(null);
+    
     if (textareaRef.current) {
       textareaRef.current.focus();
     }
@@ -1077,6 +1146,34 @@ const ChatPage = () => {
               </div>
             </div>
           </div>
+          
+          <SalesScriptDialog
+            isOpen={activeDialog === 'generate_sales_script'}
+            onClose={() => setActiveDialog(null)}
+            onSubmit={handleDialogSubmit}
+            tool="generate_sales_script"
+          />
+          
+          <ObjectionHandlerDialog
+            isOpen={activeDialog === 'handle_objection'}
+            onClose={() => setActiveDialog(null)}
+            onSubmit={handleDialogSubmit}
+            tool="handle_objection"
+          />
+          
+          <ComparablesDialog
+            isOpen={activeDialog === 'generate_comparables'}
+            onClose={() => setActiveDialog(null)}
+            onSubmit={handleDialogSubmit}
+            tool="generate_comparables"
+          />
+          
+          <LocationResearchDialog
+            isOpen={activeDialog === 'research_location'}
+            onClose={() => setActiveDialog(null)}
+            onSubmit={handleDialogSubmit}
+            tool="research_location"
+          />
         </>
       )}
     </div>

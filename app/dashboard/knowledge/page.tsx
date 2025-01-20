@@ -290,10 +290,10 @@ export default function KnowledgePage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="opacity-0 group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-400"
+                    className="bg-white/10 opacity-0 group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-400"
                     onClick={() => handleDeleteInterpreterFile(file.file_id)}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4 text-white" />
                   </Button>
                 </div>
               ))
@@ -404,7 +404,7 @@ export default function KnowledgePage() {
                   className="opacity-0 group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-400"
                   onClick={() => handleDeleteFile(file.file_id)}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4 text-white" />
                 </Button>
               </div>
             ))
