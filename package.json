@@ -3,6 +3,8 @@
   "description": "REVA - Real Estate Virtual Assistant, is An AI-powered real estate analysis tool that leverages OpenAI's Assistant API to provide instant property insights, market analysis, and valuation support.",
   "version": "1.0",
   "private": true,
+  "author": "Rahees Ahmed",
+  "author_url": "https://github.com/raheesahmed",
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && prisma db push && next build",
