@@ -1,0 +1,252 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light theme */
+    --background: 210 100% 98%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 204 98% 48%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 204 94% 94%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 204 94% 94%;
+    --accent-foreground: 222 47% 11%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --success: 142 72% 29%;
+    --success-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 204 98% 48%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Dark theme */
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 204 98% 48%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --success: 142 72% 29%;
+    --success-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 204 98% 48%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased font-body;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-sans font-medium tracking-tight text-reva-800 dark:text-reva-100;
+  }
+
+  h1 {
+    @apply text-4xl lg:text-5xl mb-6;
+  }
+
+  h2 {
+    @apply text-3xl lg:text-4xl mb-5;
+  }
+
+  h3 {
+    @apply text-2xl lg:text-3xl mb-4;
+  }
+
+  p {
+    @apply leading-7 text-neutral-700 dark:text-neutral-200;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  @apply w-2;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-neutral-100 dark:bg-neutral-800;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-neutral-300 dark:bg-neutral-600 rounded-full 
+         hover:bg-neutral-400 dark:hover:bg-neutral-500 transition-colors;
+}
+
+/* Premium UI Components */
+.glass-card {
+  @apply bg-white/80 dark:bg-neutral-800/80 backdrop-blur-lg border-neutral-200 
+         dark:border-neutral-700 border rounded-lg shadow-card 
+         hover:shadow-elevated transition-all duration-300;
+}
+
+.premium-gradient {
+  @apply bg-gradient-to-r from-reva-600 to-reva-800 text-white;
+}
+
+.accent-gradient {
+  @apply bg-gradient-to-r from-reva-300 to-reva-400 text-white;
+}
+
+/* Interactive Elements */
+.interactive-hover {
+  @apply transition-all duration-300 hover:scale-105 hover:shadow-elevated;
+}
+
+.premium-button {
+  @apply px-6 py-3 rounded-md bg-reva-500 text-white 
+         hover:bg-reva-600 transition-all duration-300 
+         focus:ring-2 focus:ring-reva-300 
+         disabled:opacity-50 disabled:cursor-not-allowed
+         font-body font-medium tracking-wide
+         shadow-soft hover:shadow-card;
+}
+
+.secondary-button {
+  @apply px-6 py-3 rounded-md border-2 border-reva-500 
+         text-reva-500 hover:bg-reva-50 
+         transition-all duration-300
+         font-body font-medium tracking-wide
+         shadow-soft hover:shadow-card;
+}
+
+.text-link {
+  @apply text-reva-500 hover:text-reva-600 
+         underline-offset-4 hover:underline 
+         transition-colors duration-200;
+}
+
+/* Data Visualization */
+.chart-container {
+  @apply p-6 rounded-lg border border-neutral-200 
+         dark:border-neutral-700 bg-white dark:bg-neutral-800 
+         shadow-card hover:shadow-elevated 
+         transition-all duration-300;
+}
+
+.stat-card {
+  @apply p-8 rounded-lg border border-neutral-200 
+         dark:border-neutral-700 bg-white dark:bg-neutral-800 
+         shadow-card hover:shadow-elevated 
+         transition-all duration-300;
+}
+
+/* Layout Utilities */
+.content-wrapper {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12;
+}
+
+.grid-layout {
+  @apply grid gap-8 md:grid-cols-2 lg:grid-cols-3;
+}
+
+/* Property Cards */
+.property-card {
+  @apply glass-card overflow-hidden cursor-pointer;
+}
+
+.property-image {
+  @apply aspect-[4/3] object-cover w-full 
+         transition-transform duration-500;
+}
+
+.property-image-hover {
+  @apply group-hover:scale-105;
+}
+
+.property-details {
+  @apply p-6 space-y-4;
+}
+
+.property-price {
+  @apply text-2xl font-sans font-semibold text-reva-800 dark:text-reva-100;
+}
+
+.property-location {
+  @apply text-sm text-neutral-600 dark:text-neutral-300 flex items-center gap-2;
+}
+
+.property-features {
+  @apply flex items-center gap-4 text-sm text-neutral-500 dark:text-neutral-400;
+}
+
+/* Form Elements */
+.input-field {
+  @apply w-full px-4 py-3 rounded-md border border-neutral-200 
+         dark:border-neutral-700 bg-white dark:bg-neutral-800 
+         focus:ring-2 focus:ring-reva-300 dark:focus:ring-reva-600 
+         focus:border-transparent outline-none transition-all duration-200;
+}
+
+.select-field {
+  @apply input-field appearance-none bg-no-repeat bg-right pr-10;
+}
+
+.checkbox-field {
+  @apply h-5 w-5 rounded border-neutral-300 dark:border-neutral-600 
+         text-reva-500 focus:ring-reva-300 dark:focus:ring-reva-600;
+}
+
+/* Loading States */
+.loading-skeleton {
+  @apply animate-pulse bg-neutral-100 dark:bg-neutral-800 rounded;
+}
+
+/* Tooltips */
+.tooltip {
+  @apply absolute z-50 px-3 py-2 text-sm font-body
+         bg-neutral-800 dark:bg-neutral-100 
+         text-white dark:text-neutral-800 
+         rounded shadow-elevated;
+}
