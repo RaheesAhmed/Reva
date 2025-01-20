@@ -31,6 +31,11 @@ import {
   LocationResearchDialog 
 } from "@/components/dialogs/tool-dialogs";
 
+import { Header } from "@/components/ui/header";
+import { useSession, signOut } from "next-auth/react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { UserCircle, LogOut } from "lucide-react";
+
 type MessageProps = {
   role: "user" | "assistant" | "code";
   content: string;
@@ -48,14 +53,7 @@ interface CodeProps {
   children: React.ReactNode;
 }
 
-interface RequiredActionFunctionToolCall {
-  id: string;
-  type: "function";
-  function: {
-    name: string;
-    arguments: string;
-  };
-}
+
 
 const LoadingSpinner = () => {
   return (
@@ -505,72 +503,114 @@ const plugins = [
 ];
 
 const ChatToolbar = ({ onToolSelect }: { onToolSelect: (tool: string) => void }) => {
+  const { data: session } = useSession();
+
+  const handleSignOut = () => {
+    signOut({ callbackUrl: '/' });
+  };
+
   return (
-    <div className="flex items-center gap-3 px-6 py-3 border-b border-neutral-800 bg-neutral-900/50 backdrop-blur-sm">
-      {plugins.map((plugin) => (
-        <Popover key={plugin.id}>
-          <PopoverTrigger asChild>
+    <div className="flex items-center justify-between gap-3 px-6 py-3 border-b border-neutral-800 bg-neutral-900/50 backdrop-blur-sm">
+      <div className="flex items-center gap-3">
+        {plugins.map((plugin) => (
+          <Popover key={plugin.id}>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className={cn(
+                  "text-neutral-400 hover:text-white",
+                  "transition-all duration-200",
+                  "flex items-center gap-2.5",
+                  "rounded-lg px-3 py-2",
+                  "hover:bg-neutral-800/50",
+                  "group relative"
+                )}
+              >
+                <div className={cn(
+                  "p-1.5 rounded-lg",
+                  "bg-neutral-800/50 group-hover:bg-neutral-700/50",
+                  "transition-all duration-200 ease-in-out",
+                  "ring-1 ring-neutral-700/50 group-hover:ring-neutral-600/50",
+                  plugin.color
+                )}>
+                  <plugin.icon className="h-4 w-4" />
+                </div>
+                <span className="font-medium">{plugin.label}</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent 
+              className={cn(
+                "w-72 p-0",
+                "bg-neutral-900 border border-neutral-800",
+                "shadow-2xl shadow-black/20",
+                "backdrop-blur-xl"
+              )}
+              sideOffset={8}
+            >
+              <div className="p-4 border-b border-neutral-800">
+                <h3 className="text-sm font-semibold text-white mb-1.5">{plugin.label}</h3>
+                <p className="text-xs text-neutral-400">{plugin.description}</p>
+              </div>
+              <div className="p-2">
+                <div className="flex flex-col">
+                  {plugin.options.map((option) => (
+                    <Button
+                      key={option.id}
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onToolSelect(option.id)}
+                      className={cn(
+                        "justify-start text-neutral-400",
+                        "hover:text-white hover:bg-neutral-800",
+                        "transition-all duration-150",
+                        "rounded-md px-3 py-2 h-auto",
+                        "font-medium"
+                      )}
+                    >
+                      {option.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        ))}
+      </div>
+
+      {/* User Profile Section */}
+      {session?.user && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
             <Button 
               variant="ghost" 
               size="sm" 
-              className={cn(
-                "text-neutral-400 hover:text-white",
-                "transition-all duration-200",
-                "flex items-center gap-2.5",
-                "rounded-lg px-3 py-2",
-                "hover:bg-neutral-800/50",
-                "group relative"
-              )}
+              className="flex items-center gap-2 text-neutral-400 hover:text-white transition-colors"
             >
-              <div className={cn(
-                "p-1.5 rounded-lg",
-                "bg-neutral-800/50 group-hover:bg-neutral-700/50",
-                "transition-all duration-200 ease-in-out",
-                "ring-1 ring-neutral-700/50 group-hover:ring-neutral-600/50",
-                plugin.color
-              )}>
-                <plugin.icon className="h-4 w-4" />
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-full bg-neutral-800 flex items-center justify-center text-white">
+                  {session.user.name ? session.user.name[0].toUpperCase() : session.user.email?.[0].toUpperCase()}
+                </div>
+                <span className="font-medium">{session.user.name || session.user.email}</span>
               </div>
-              <span className="font-medium">{plugin.label}</span>
             </Button>
-          </PopoverTrigger>
-          <PopoverContent 
-            className={cn(
-              "w-72 p-0",
-              "bg-neutral-900 border border-neutral-800",
-              "shadow-2xl shadow-black/20",
-              "backdrop-blur-xl"
-            )}
-            sideOffset={8}
-          >
-            <div className="p-4 border-b border-neutral-800">
-              <h3 className="text-sm font-semibold text-white mb-1.5">{plugin.label}</h3>
-              <p className="text-xs text-neutral-400">{plugin.description}</p>
-            </div>
-            <div className="p-2">
-              <div className="flex flex-col">
-                {plugin.options.map((option) => (
-                  <Button
-                    key={option.id}
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onToolSelect(option.id)}
-                    className={cn(
-                      "justify-start text-neutral-400",
-                      "hover:text-white hover:bg-neutral-800",
-                      "transition-all duration-150",
-                      "rounded-md px-3 py-2 h-auto",
-                      "font-medium"
-                    )}
-                  >
-                    {option.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </PopoverContent>
-        </Popover>
-      ))}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56 bg-neutral-900 border border-neutral-800">
+            <DropdownMenuItem className="text-neutral-400 hover:text-white hover:bg-neutral-800 cursor-pointer">
+              <UserCircle className="h-4 w-4 mr-2" />
+              Profile Settings
+            </DropdownMenuItem>
+            <DropdownMenuSeparator className="bg-neutral-800" />
+            <DropdownMenuItem 
+              className="text-red-400 hover:text-red-300 hover:bg-neutral-800 cursor-pointer"
+              onClick={handleSignOut}
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
     </div>
   );
 };
@@ -1005,6 +1045,7 @@ const ChatPage = () => {
 
   return (
     <div className="flex h-[100vh] overflow-hidden bg-neutral-900">
+      
       {isClient && (
         <>
           <ChatSideBar
