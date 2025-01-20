@@ -1,16 +1,15 @@
+
+
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/components/providers/session-provider";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "REVA - Real Estate Virtual Assistant",
-  description: "AI-powered real estate analysis tool providing instant property insights, market analysis, and valuation support.",
-  icons: {
-    icon: "/reva-icon.svg",
-    apple: "/reva-icon.svg",
-  },
+  title: "Reva.ai - Real Estate Analysis",
+  description: "Premium real estate analysis tools powered by AI",
 };
 
 export default function RootLayout({
@@ -20,7 +19,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
+      </body>
     </html>
   );
 }
