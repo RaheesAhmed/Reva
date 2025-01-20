@@ -5,14 +5,14 @@ import { NextResponse } from "next/server";
 // Update assistant instructions
 export async function PATCH(request: Request) {
   try {
-    const body = await request.json();
-    const { name, description, instructions } = body;
-
-    console.log("Updating assistant with data:", {
+    
+    
+    const assistant = await openai.beta.assistants.update(assistantId, {
+      
       name: "Reva",
-      description:
-        description ||
-        `You are REVA, a specialized real estate analysis and sales assistant with advanced research capabilities. You have access to files, specialized functions, and real-time market research to provide comprehensive real estate insights.
+      model: "gpt-4o-mini",
+      description:`You are REVA, a specialized real estate analysis and sales assistant with advanced research capabilities. You have access to files, specialized functions, and real-time market research to provide comprehensive real estate insights.`,
+      instructions: `You are REVA, a specialized real estate analysis and sales assistant with advanced research capabilities. You have access to files, specialized functions, and real-time market research to provide comprehensive real estate insights.
   
         Your primary functions include:
         1. Sales Support with Market Intelligence:
@@ -35,11 +35,43 @@ export async function PATCH(request: Request) {
            - Evaluate current traffic patterns and changes
            - Assess real-time economic indicators
            - Incorporate web research for up-to-date insights`,
-      instructions: "You are REVA, a specialized real estate analysis and sales assistant with advanced research capabilities. You have access to files, specialized functions, and real-time market research to provide comprehensive real estate insights.",
       tools: [
         { type: "code_interpreter" },
         { type: "file_search" },
       
+        {
+          type: "function",
+          function: {
+            name: "web_search",
+            description: "Perform a real-time web search using DuckDuckGo to get current market data and information",
+            parameters: {
+              type: "object",
+              properties: {
+                query: {
+                  type: "string",
+                  description: "The search query to find real estate market information",
+                },
+                region: {
+                  type: "string",
+                  description: "Region for search results (e.g., us-en, uk-en)",
+                  enum: ["us-en", "uk-en", "ca-en", "au-en"],
+                },
+                time: {
+                  type: "string",
+                  description: "Time range for search results",
+                  enum: ["d", "w", "m", "y"],
+                },
+                max_results: {
+                  type: "number",
+                  description: "Maximum number of search results to return",
+                  minimum: 1,
+                  maximum: 10,
+                },
+              },
+              required: ["query"],
+            },
+          },
+        },
         {
           type: "function",
           function: {
@@ -210,11 +242,7 @@ export async function PATCH(request: Request) {
       },
       
     },
-    });
-    const assistant = await openai.beta.assistants.update(assistantId, {
-      name,
-      description,
-      instructions,
+    
     });
 
     console.log("Assistant updated successfully:", assistant.id);

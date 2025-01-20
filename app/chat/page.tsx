@@ -1,12 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { Paperclip, User, Bot, Copy, Check, Brain, Send } from "lucide-react";
+import { Paperclip, User, Bot, Copy, Check, Brain, Send, FileText, Shield, Target, BarChart } from "lucide-react";
 import { AssistantStream } from "openai/lib/AssistantStream";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -16,6 +17,8 @@ import { useEffect, useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import { ChatSideBar } from "@/components/ChatSideBar";
 import { Logo } from "@/components/ui/logo";
+import { generateSalesScript, handleObjection, generateComparables, researchLocation } from "@/utils/real-estate";
+import { performWebSearch } from "@/utils/search";
 
 type MessageProps = {
   role: "user" | "assistant" | "code";
@@ -34,6 +37,15 @@ interface CodeProps {
   children: React.ReactNode;
 }
 
+interface RequiredActionFunctionToolCall {
+  id: string;
+  type: "function";
+  function: {
+    name: string;
+    arguments: string;
+  };
+}
+
 const LoadingSpinner = () => {
   return (
     <div className="flex items-center space-x-2">
@@ -47,6 +59,7 @@ const Message = ({ role, content }: MessageProps) => {
   const isUser = role === "user";
   const isGenerating = content === "" && role === "assistant";
   const [isCopied, setIsCopied] = useState(false);
+  
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -238,9 +251,17 @@ const Message = ({ role, content }: MessageProps) => {
                     <ul className="pl-6 text-gray-100 mb-6 space-y-2 list-none">
                       {React.Children.map(children, (child) => {
                         if (React.isValidElement(child)) {
-                          return React.cloneElement(child, {
-                            className:
-                              'relative pl-6 before:content-["•"] before:absolute before:left-0 before:text-gray-400',
+                          return React.cloneElement(child as React.ReactElement, {
+                            style: {
+                              position: 'relative',
+                              paddingLeft: '1.5rem',
+                              '::before': {
+                                content: '"•"',
+                                position: 'absolute',
+                                left: 0,
+                                color: 'rgb(156 163 175)'
+                              }
+                            }
                           });
                         }
                         return child;
@@ -253,10 +274,17 @@ const Message = ({ role, content }: MessageProps) => {
                     <ol className="pl-6 text-gray-100 mb-6 space-y-2 list-none counter-reset-item">
                       {React.Children.map(children, (child, index) => {
                         if (React.isValidElement(child)) {
-                          return React.cloneElement(child, {
-                            className:
-                              "relative pl-6 before:absolute before:left-0 before:text-gray-400",
-                            "data-counter": index + 1,
+                          return React.cloneElement(child as React.ReactElement, {
+                            style: {
+                              position: 'relative',
+                              paddingLeft: '1.5rem',
+                              '::before': {
+                                content: `"${index + 1}."`,
+                                position: 'absolute',
+                                left: 0,
+                                color: 'rgb(156 163 175)'
+                              }
+                            }
                           });
                         }
                         return child;
@@ -354,6 +382,112 @@ const autoResizeTextArea = (element: HTMLTextAreaElement) => {
   element.style.height = `${Math.min(element.scrollHeight, 200)}px`; // Max height of 200px
 };
 
+const ToolButton = ({ icon: Icon, label, onClick }: { icon: any, label: string, onClick: () => void }) => (
+  <Button
+    variant="ghost"
+    size="sm"
+    className="flex items-center gap-2 text-neutral-400 hover:text-white hover:bg-neutral-800"
+    onClick={onClick}
+  >
+    <Icon className="h-4 w-4" />
+    <span className="text-sm">{label}</span>
+  </Button>
+);
+
+const ChatToolbar = ({ onToolSelect }: { onToolSelect: (tool: string) => void }) => {
+  return (
+    <div className="flex items-center gap-2 px-4 py-2 border-b border-neutral-800">
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="ghost" size="sm" className="text-neutral-400 hover:text-white">
+            <FileText className="h-4 w-4 mr-2" />
+            Script Generation
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-56 bg-neutral-900 border-neutral-800">
+          <div className="flex flex-col gap-1">
+            <Button variant="ghost" size="sm" onClick={() => onToolSelect('cold-call')} className="justify-start text-neutral-400 hover:text-white">
+              Cold Call Script
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => onToolSelect('industry-script')} className="justify-start text-neutral-400 hover:text-white">
+              Industry Specific
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => onToolSelect('template-script')} className="justify-start text-neutral-400 hover:text-white">
+              Template Management
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
+
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="ghost" size="sm" className="text-neutral-400 hover:text-white">
+            <Shield className="h-4 w-4 mr-2" />
+            Objection Handling
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-56 bg-neutral-900 border-neutral-800">
+          <div className="flex flex-col gap-1">
+            <Button variant="ghost" size="sm" onClick={() => onToolSelect('objection-detect')} className="justify-start text-neutral-400 hover:text-white">
+              Real-time Detection
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => onToolSelect('response-db')} className="justify-start text-neutral-400 hover:text-white">
+              Response Database
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => onToolSelect('context-suggest')} className="justify-start text-neutral-400 hover:text-white">
+              Context Suggestions
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
+
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="ghost" size="sm" className="text-neutral-400 hover:text-white">
+            <Target className="h-4 w-4 mr-2" />
+            Value Proposition
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-56 bg-neutral-900 border-neutral-800">
+          <div className="flex flex-col gap-1">
+            <Button variant="ghost" size="sm" onClick={() => onToolSelect('federal-data')} className="justify-start text-neutral-400 hover:text-white">
+              Federal Data Analysis
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => onToolSelect('market-analysis')} className="justify-start text-neutral-400 hover:text-white">
+              Market Analysis
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => onToolSelect('uvp-template')} className="justify-start text-neutral-400 hover:text-white">
+              UVP Templates
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
+
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="ghost" size="sm" className="text-neutral-400 hover:text-white">
+            <BarChart className="h-4 w-4 mr-2" />
+            Comparables
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-56 bg-neutral-900 border-neutral-800">
+          <div className="flex flex-col gap-1">
+            <Button variant="ghost" size="sm" onClick={() => onToolSelect('property-compare')} className="justify-start text-neutral-400 hover:text-white">
+              Property Comparison
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => onToolSelect('sales-data')} className="justify-start text-neutral-400 hover:text-white">
+              Recent Sales Data
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => onToolSelect('market-trends')} className="justify-start text-neutral-400 hover:text-white">
+              Market Trends
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+};
+
 const ChatPage = () => {
   const [messages, setMessages] = React.useState<MessageProps[]>([]);
   const [sessions, setSessions] = React.useState<SessionProps[]>([]);
@@ -445,6 +579,35 @@ const ChatPage = () => {
     }
   };
 
+  const functionCallHandler = async (toolCall: any) => {
+    if (!toolCall?.function?.name) return;
+
+    const args = JSON.parse(toolCall.function.arguments);
+    let result;
+
+    switch (toolCall.function.name) {
+      case "generate_sales_script":
+        result = generateSalesScript(args);
+        break;
+      case "handle_objection":
+        result = handleObjection(args);
+        break;
+      case "generate_comparables":
+        result = generateComparables(args);
+        break;
+      case "research_location":
+        result = researchLocation(args);
+        break;
+      case "web_search":
+        result = await performWebSearch(args);
+        break;
+      default:
+        return;
+    }
+
+    return JSON.stringify(result);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isUploading || (!userInput.trim() && !fileInfo)) return;
@@ -456,7 +619,6 @@ const ChatPage = () => {
     const messageContent = `${userInput} ${fileInfo}`.trim();
 
     try {
-      // Add user message immediately
       setMessages((prev) => [
         ...prev,
         { role: "user", content: messageContent },
@@ -467,46 +629,27 @@ const ChatPage = () => {
         const newSession: SessionProps = {
           id: crypto.randomUUID(),
           messages: [{ role: "user", content: messageContent }],
-          title:
-            messageContent.slice(0, 30) +
-            (messageContent.length > 30 ? "..." : ""),
+          title: messageContent.slice(0, 30) + (messageContent.length > 30 ? "..." : ""),
           createdAt: Date.now(),
         };
         setSessions([newSession]);
         setActiveSessionIndex(0);
         localStorage.setItem("chatSessions", JSON.stringify([newSession]));
       }
-      // Update session title if it's a new chat
-      else if (activeSessionIndex !== null && messages.length === 0) {
-        const updatedSessions = [...sessions];
-        updatedSessions[activeSessionIndex] = {
-          ...updatedSessions[activeSessionIndex],
-          title:
-            messageContent.slice(0, 30) +
-            (messageContent.length > 30 ? "..." : ""),
-        };
-        setSessions(updatedSessions);
-        localStorage.setItem("chatSessions", JSON.stringify(updatedSessions));
-      }
 
-      // Clear inputs before sending
       setUserInput("");
       setFileInfo("");
 
-      // Reset textarea height using ref
       if (textareaRef.current) {
         textareaRef.current.style.height = "56px";
       }
 
-      // Scroll to bottom
       setTimeout(scrollToBottom, 100);
 
-      // Send the message
       await sendMessage(messageContent);
     } catch (error) {
       console.error("Error in handleSubmit:", error);
       showError("Failed to send message. Please try again.");
-      // Remove the failed message
       setMessages((prev) => prev.slice(0, -1));
     }
   };
@@ -533,33 +676,114 @@ const ChatPage = () => {
         throw new Error("Failed to send message");
       }
 
-      // Create stream from response
       const stream = AssistantStream.fromReadableStream(response.body);
-
-      // Add empty assistant message for streaming
-      appendMessage("assistant", "");
-
-      // Set up stream handlers
-      stream.on("textCreated", () => {
-        // Message already created above
-      });
-
-      stream.on("textDelta", (delta) => {
-        if (delta.value != null) {
-          appendToLastMessage(delta.value);
-        }
-      });
-
-      stream.on("error", (error) => {
-        console.error("Stream error:", error);
-        showError("Error receiving response. Please try again.");
-        // Remove the failed assistant message
-        setMessages((prev) => prev.slice(0, -1));
-      });
+      handleReadableStream(stream);
     } catch (error) {
       console.error("Error sending message:", error);
       throw error;
     }
+  };
+
+  const submitActionResult = async (runId: string, toolCallOutputs: any[]) => {
+    const response = await fetch(
+      `/api/assistants/threads/${threadId}/actions`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          runId: runId,
+          toolCallOutputs: toolCallOutputs,
+        }),
+      }
+    );
+    const stream = AssistantStream.fromReadableStream(response.body);
+    handleReadableStream(stream);
+  };
+
+  const handleReadableStream = (stream: AssistantStream) => {
+    // Set up stream handlers
+    stream.on("textCreated", () => {
+      appendMessage("assistant", "");
+    });
+
+    stream.on("textDelta", (delta) => {
+      if (delta.value != null) {
+        appendToLastMessage(delta.value);
+      }
+    });
+
+    stream.on("error", (error) => {
+      console.error("Stream error:", error);
+      showError("Error receiving response. Please try again.");
+      // Remove the failed assistant message
+      setMessages((prev) => prev.slice(0, -1));
+    });
+
+    stream.on("toolCallCreated", (toolCall) => {
+      if (toolCall.type === "function") {
+        appendMessage("assistant", "");
+      }
+    });
+
+    stream.on("toolCallDelta", (delta, snapshot) => {
+      if (delta.type === "function" && delta.function?.output) {
+        appendToLastMessage(delta.function.output);
+      }
+    });
+
+    stream.on("event", (event) => {
+      if (event.event === "thread.run.requires_action") {
+        handleRequiresAction(event);
+      }
+      if (event.event === "thread.run.completed") {
+        handleRunCompleted();
+      }
+    });
+  };
+
+  const handleTextCreated = () => {
+    appendMessage("assistant", "");
+  };
+
+  const handleTextDelta = (delta: any) => {
+    if (delta.value != null) {
+      appendToLastMessage(delta.value);
+    }
+  };
+
+  const handleImageFileDone = (image: any) => {
+    appendToLastMessage(`\n![${image.file_id}](/api/files/${image.file_id})\n`);
+  };
+
+  const toolCallCreated = (toolCall: any) => {
+    if (toolCall.type !== "function") return;
+    appendMessage("assistant", "");
+  };
+
+  const toolCallDelta = (delta: any, snapshot: any) => {
+    if (delta.type !== "function") return;
+    if (!delta.function?.output) return;
+    appendToLastMessage(delta.function.output);
+  };
+
+  const handleRequiresAction = async (event: any) => {
+    const runId = event.data.id;
+    const toolCalls = event.data.required_action.submit_tool_outputs.tool_calls;
+    
+    const toolCallOutputs = await Promise.all(
+      toolCalls.map(async (toolCall: any) => {
+        const result = await functionCallHandler(toolCall);
+        return { output: result, tool_call_id: toolCall.id };
+      })
+    );
+    
+    submitActionResult(runId, toolCallOutputs);
+  };
+
+  const handleRunCompleted = () => {
+    // Re-enable input if needed
   };
 
   const appendToLastMessage = (text: string) => {
@@ -664,6 +888,52 @@ const ChatPage = () => {
     localStorage.setItem("chatSessions", JSON.stringify(updatedSessions));
   };
 
+  const handleToolSelect = (tool: string) => {
+    let prompt = "";
+    switch(tool) {
+      case 'cold-call':
+        prompt = "Generate a cold call script for a commercial real estate property.";
+        break;
+      case 'industry-script':
+        prompt = "Create an industry-specific sales script for the technology sector.";
+        break;
+      case 'template-script':
+        prompt = "Show available script templates and help me customize one.";
+        break;
+      case 'objection-detect':
+        prompt = "Help me prepare for common objections in commercial real estate sales.";
+        break;
+      case 'response-db':
+        prompt = "Access the response database for handling price objections.";
+        break;
+      case 'context-suggest':
+        prompt = "Provide context-aware suggestions for my next client meeting.";
+        break;
+      case 'federal-data':
+        prompt = "Analyze federal data to create a unique value proposition.";
+        break;
+      case 'market-analysis':
+        prompt = "Generate a market analysis report for downtown properties.";
+        break;
+      case 'uvp-template':
+        prompt = "Help me create a unique value proposition using available templates.";
+        break;
+      case 'property-compare':
+        prompt = "Compare similar properties in the area.";
+        break;
+      case 'sales-data':
+        prompt = "Show recent sales data for commercial properties.";
+        break;
+      case 'market-trends':
+        prompt = "Analyze market trends for the past 6 months.";
+        break;
+    }
+    setUserInput(prompt);
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  };
+
   return (
     <div className="flex h-[100vh] overflow-hidden bg-neutral-900">
       {isClient && (
@@ -681,40 +951,39 @@ const ChatPage = () => {
           <div className="relative flex h-full w-full flex-1 flex-col">
             <div className="flex-1 overflow-hidden">
               <ScrollArea className="h-full overflow-y-auto">
-                <div className="flex flex-col items-center text-sm h-full">
-                  {messages.length === 0 && (
-                    <div className="text-center px-3 py-10 mt-12">
-                      <div className="flex items-baseline justify-center mb-8">
-                        <span className="text-5xl font-medium bg-clip-text text-transparent bg-gradient-to-r from-reva-400 via-reva-500 to-reva-600 tracking-tight">
-                          reva
-                        </span>
-                        <span className="text-5xl font-medium bg-clip-text text-transparent bg-gradient-to-r from-white/90 to-white/70">
-                          .
-                        </span>
-                        <span className="text-5xl font-medium bg-clip-text text-transparent bg-gradient-to-r from-reva-400 via-reva-500 to-reva-600">
-                          ai
-                        </span>
-                      </div>
-                      <h2 className="text-4xl font-semibold text-white mb-2">
-                        How can I help you today?
-                      </h2>
-                      <p className="text-neutral-400 text-lg">
-                        Ask me anything about real estate analysis
-                      </p>
+                <ChatToolbar onToolSelect={handleToolSelect} />
+                {messages.length === 0 && (
+                  <div className="text-center px-3 py-10 mt-12">
+                    <div className="flex items-baseline justify-center mb-8">
+                      <span className="text-5xl font-medium bg-clip-text text-transparent bg-gradient-to-r from-reva-400 via-reva-500 to-reva-600 tracking-tight">
+                        reva
+                      </span>
+                      <span className="text-5xl font-medium bg-clip-text text-transparent bg-gradient-to-r from-white/90 to-white/70">
+                        .
+                      </span>
+                      <span className="text-5xl font-medium bg-clip-text text-transparent bg-gradient-to-r from-reva-400 via-reva-500 to-reva-600">
+                        ai
+                      </span>
                     </div>
-                  )}
-                  {messages.map((msg, index) => (
-                    <Message
-                      key={index}
-                      role={msg.role}
-                      content={msg.content}
-                    />
-                  ))}
-                  <div
-                    ref={messagesEndRef}
-                    className="h-32 md:h-48 flex-shrink-0"
+                    <h2 className="text-4xl font-semibold text-white mb-2">
+                      How can I help you today?
+                    </h2>
+                    <p className="text-neutral-400 text-lg">
+                      Ask me anything about real estate analysis
+                    </p>
+                  </div>
+                )}
+                {messages.map((msg, index) => (
+                  <Message
+                    key={index}
+                    role={msg.role}
+                    content={msg.content}
                   />
-                </div>
+                ))}
+                <div
+                  ref={messagesEndRef}
+                  className="h-32 md:h-48 flex-shrink-0"
+                />
               </ScrollArea>
             </div>
             <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-neutral-900 via-neutral-900 to-transparent pt-10">
